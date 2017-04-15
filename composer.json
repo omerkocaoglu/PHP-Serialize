@@ -1,0 +1,26 @@
+{
+  "name": "fabs/serialize",
+  "type": "library",
+  "description": "Php serialization",
+  "keywords": [
+    "serialize",
+    "serialization",
+    "php serialization"
+  ],
+  "license": "MIT",
+  "authors": [
+    {
+      "name": "Ahmet Turk",
+      "email": "ahmetturk93@gmail.com",
+      "homepage": "https://github.com/fabsolute"
+    }
+  ],
+  "require": {
+    "php": "^7.0",
+  },
+  "autoload": {
+    "psr-0": {
+      "Fabs\\Serialize": "src"
+    }
+  }
+}
