@@ -164,27 +164,26 @@ class SerializableObject implements \JsonSerializable
         return $output;
     }
 
-    public static function deserialize($data)
+    public static function deserialize($data, $is_array = false)
     {
-        $class_name = static::class;
-        return self::create($data, $class_name);
+        if ($is_array) {
+            $output = [];
+            foreach ($data as $sub_data) {
+                $output[] = static::deserialize($sub_data);
+            }
+            return $output;
+        } else {
+            $class_name = static::class;
+            return self::create($data, $class_name);
+        }
     }
 
     #endregion
-
-    private function checkPropertyExist($property_name)
-    {
-        if (!property_exists($this, $property_name)) {
-            $exception = sprintf("Variable '%s' not found in class '%s'", $property_name, static::class);
-            throw new \InvalidArgumentException($exception);
-        }
-    }
 
     #region Protected Functions
 
     protected function makeTransient($property_name)
     {
-        $this->checkPropertyExist($property_name);
         if (!in_array($property_name, $this->serializable_object_transient_properties)) {
             $this->serializable_object_transient_properties[] = $property_name;
         }
@@ -193,8 +192,6 @@ class SerializableObject implements \JsonSerializable
 
     protected function registerProperty($property_name, $class_name, $is_array = false)
     {
-        $this->checkPropertyExist($property_name);
-
         $this->serializable_object_registered_properties[$property_name]
             = new RegisteredProperty($class_name, $is_array);
 
