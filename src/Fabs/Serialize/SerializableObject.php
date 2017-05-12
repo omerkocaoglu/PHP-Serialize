@@ -205,40 +205,66 @@ class SerializableObject implements \JsonSerializable
     }
 
     #region Validations
-
+    /**
+     * @param $property_name
+     * @return IntegerValidation
+     */
     protected function addIntegerValidation($property_name)
     {
         $validation = new IntegerValidation();
-        $this->serializable_object_validations[$property_name] = $validation;
+        $this->addValidation($property_name, $validation);
         return $validation;
     }
 
+    /**
+     * @param $property_name string
+     * @return StringValidation
+     */
     protected function addStringValidation($property_name)
     {
         $validation = new StringValidation();
-        $this->serializable_object_validations[$property_name] = $validation;
+        $this->addValidation($property_name, $validation);
         return $validation;
     }
 
+    /**
+     * @param $property_name string
+     * @return FloatValidation
+     */
     protected function addFloatValidation($property_name)
     {
         $validation = new FloatValidation();
-        $this->serializable_object_validations[$property_name] = $validation;
+        $this->addValidation($property_name, $validation);
         return $validation;
     }
 
+    /**
+     * @param $property_name string
+     * @return ObjectValidation
+     */
     protected function addObjectValidation($property_name)
     {
         $validation = new ObjectValidation();
-        $this->serializable_object_validations[$property_name] = $validation;
+        $this->addValidation($property_name, $validation);
         return $validation;
     }
 
+    /**
+     * @param $property_name
+     * @return BooleanValidation
+     */
     protected function addBooleanValidation($property_name)
     {
         $validation = new BooleanValidation();
-        $this->serializable_object_validations[$property_name] = $validation;
+        $this->addValidation($property_name, $validation);
         return $validation;
+    }
+
+    protected function addValidation($property_name, $validation)
+    {
+        if ($validation instanceof ValidationBase) {
+            $this->serializable_object_validations[$property_name] = $validation;
+        }
     }
 
     #endregion
