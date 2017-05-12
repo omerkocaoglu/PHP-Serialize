@@ -112,31 +112,7 @@ class SerializableObject implements \JsonSerializable
             }
         }
 
-        foreach ($this as $key => $value) {
-            if (array_key_exists($key, $this->serializable_object_validations)) {
-
-                $validation_failed = false;
-                $validation = $this->serializable_object_validations[$key];
-
-                if ($validation->getIsArray()) {
-                    if (!is_array($value)) {
-                        $validation_failed = true;
-                    } else {
-                        foreach ($value as $value2) {
-                            if (!$validation->isValid($value2)) {
-                                $validation_failed = true;
-                            }
-                        }
-                    }
-                } else if (!$validation->isValid($value)) {
-                    $validation_failed = true;
-                }
-
-                if ($validation_failed) {
-                    throw new ValidationException(get_class($this), $key, $validation->getValidationName());
-                }
-            }
-        }
+        $this->validate();
 
     }
 
@@ -264,6 +240,35 @@ class SerializableObject implements \JsonSerializable
     {
         if ($validation instanceof ValidationBase) {
             $this->serializable_object_validations[$property_name] = $validation;
+        }
+    }
+
+    protected function validate()
+    {
+        foreach ($this as $key => $value) {
+            if (array_key_exists($key, $this->serializable_object_validations)) {
+
+                $validation_failed = false;
+                $validation = $this->serializable_object_validations[$key];
+
+                if ($validation->getIsArray()) {
+                    if (!is_array($value)) {
+                        $validation_failed = true;
+                    } else {
+                        foreach ($value as $value2) {
+                            if (!$validation->isValid($value2)) {
+                                $validation_failed = true;
+                            }
+                        }
+                    }
+                } else if (!$validation->isValid($value)) {
+                    $validation_failed = true;
+                }
+
+                if ($validation_failed) {
+                    throw new ValidationException(get_class($this), $key, $validation->getValidationName());
+                }
+            }
         }
     }
 
