@@ -2,6 +2,9 @@
 
 namespace Fabs\Serialize;
 
+use Fabs\Serialize\Condition\ClampCondition;
+use Fabs\Serialize\Condition\ConditionBase;
+use Fabs\Serialize\Condition\RenderIfNotNullCondition;
 use Fabs\Serialize\Validation\BooleanValidation;
 use Fabs\Serialize\Validation\FloatValidation;
 use Fabs\Serialize\Validation\IntegerValidation;
@@ -15,71 +18,60 @@ class SerializableObject implements \JsonSerializable
     /**
      * @var RegisteredProperty[]
      */
-    private $serializable_object_registered_properties = [];
+    protected $serializable_object_registered_properties = [];
     /**
-     * @var ValidationBase[]
+     * @var ValidationBase[][]
      */
-    private $serializable_object_validations = [];
+    protected $serializable_object_validations = [];
     /**
      * @var string[]
      */
-    private $serializable_object_transient_properties = [];
+    protected $serializable_object_transient_properties = [];
+    /**
+     * @var ConditionBase[][]
+     */
+    protected $serializable_object_conditions = [];
 
     public function __construct()
     {
         $this->makeTransient('serializable_object_registered_properties');
         $this->makeTransient('serializable_object_validations');
         $this->makeTransient('serializable_object_transient_properties');
+        $this->makeTransient('serializable_object_conditions');
     }
 
     public function jsonSerialize()
     {
-        foreach ($this as $key => $value) {
-            if (array_key_exists($key, $this->serializable_object_validations)) {
-                $validation_failed = false;
-                $validation = $this->serializable_object_validations[$key];
-                if ($validation->getIsArray()) {
-                    if (!is_array($value)) {
-                        $validation_failed = true;
-                    } else {
-                        foreach ($value as $value2) {
-                            if (!$validation->isValid($value2)) {
-                                $validation_failed = true;
-                            }
-                        }
-                    }
-                } else if (!$validation->isValid($value)) {
-                    $validation_failed = true;
-                }
-
-                if ($validation_failed) {
-                    throw new ValidationException(get_class($this), $key, $validation->getValidationName());
-                }
-            }
-        }
+        $this->validate();
 
         $output = [];
 
-        foreach ($this as $key => $value) {
+        foreach ($this as $property_name => $value) {
 
-            if (in_array($key, $this->serializable_object_transient_properties)) {
+            if (in_array($property_name, $this->serializable_object_transient_properties)) {
                 continue;
             }
 
             if ($value instanceof SerializableObject) {
-                $output[$key] = $value->jsonSerialize();
+                $output[$property_name] = $value->jsonSerialize();
             } else {
+
+                $should_render = $this->applyConditions($property_name, $value);
+                if (!$should_render) {
+                    continue;
+                }
+
                 if (is_array($value)) {
-                    $output[$key] = [];
+                    $output[$property_name] = [];
                     foreach ($value as $key2 => $value2) {
                         if ($value2 instanceof SerializableObject) {
-                            $output[$key][$key2] = $value2->jsonSerialize();
+                            $output[$property_name][$key2] = $value2->jsonSerialize();
                         } else {
-                            $output[$key][$key2] = $value2;
+                            $output[$property_name][$key2] = $value2;
                         }
                     }
                 } else {
-                    $output[$key] = $value;
+                    $output[$property_name] = $value;
                 }
             }
         }
@@ -226,6 +218,28 @@ class SerializableObject implements \JsonSerializable
     }
 
     /**
+     * @param $property_name string
+     * @return RenderIfNotNullCondition
+     */
+    protected function addRenderIfNotNullCondition($property_name)
+    {
+        $condition = new RenderIfNotNullCondition();
+        $this->addCondition($property_name, $condition);
+        return $condition;
+    }
+
+    /**
+     * @param $property_name string
+     * @return ClampCondition
+     */
+    protected function addClampCondition($property_name)
+    {
+        $condition = new ClampCondition();
+        $this->addCondition($property_name, $condition);
+        return $condition;
+    }
+
+    /**
      * @param $property_name
      * @return BooleanValidation
      */
@@ -236,10 +250,27 @@ class SerializableObject implements \JsonSerializable
         return $validation;
     }
 
+    protected function addCondition($property_name, $condition)
+    {
+        if ($condition instanceof ConditionBase) {
+
+            if (!is_array($this->serializable_object_conditions[$property_name])) {
+                $this->serializable_object_conditions[$property_name] = [];
+            }
+
+            $this->serializable_object_conditions[$property_name][] = $condition;
+        }
+    }
+
     protected function addValidation($property_name, $validation)
     {
         if ($validation instanceof ValidationBase) {
-            $this->serializable_object_validations[$property_name] = $validation;
+
+            if (!is_array($this->serializable_object_validations[$property_name])) {
+                $this->serializable_object_validations[$property_name] = [];
+            }
+
+            $this->serializable_object_validations[$property_name][] = $validation;
         }
     }
 
@@ -248,28 +279,49 @@ class SerializableObject implements \JsonSerializable
         foreach ($this as $key => $value) {
             if (array_key_exists($key, $this->serializable_object_validations)) {
 
-                $validation_failed = false;
-                $validation = $this->serializable_object_validations[$key];
+                foreach ($this->serializable_object_validations[$key] as $validation) {
+                    $validation_failed = false;
 
-                if ($validation->getIsArray()) {
-                    if (!is_array($value)) {
-                        $validation_failed = true;
-                    } else {
-                        foreach ($value as $value2) {
-                            if (!$validation->isValid($value2)) {
-                                $validation_failed = true;
+                    if ($validation->getIsArray()) {
+                        if (!is_array($value)) {
+                            $validation_failed = true;
+                        } else {
+                            foreach ($value as $value2) {
+                                if (!$validation->isValid($value2)) {
+                                    $validation_failed = true;
+                                    break;
+                                }
                             }
                         }
+                    } else if (!$validation->isValid($value)) {
+                        $validation_failed = true;
                     }
-                } else if (!$validation->isValid($value)) {
-                    $validation_failed = true;
-                }
 
-                if ($validation_failed) {
-                    throw new ValidationException(get_class($this), $key, $validation->getValidationName());
+                    if ($validation_failed) {
+                        throw new ValidationException(get_class($this), $key, $validation->getValidationName());
+                    }
                 }
             }
         }
+    }
+
+    protected function applyConditions($property_name, &$value)
+    {
+        if (array_key_exists($property_name, $this->serializable_object_conditions)) {
+            foreach ($this->serializable_object_conditions[$property_name] as $condition) {
+                $condition->apply($value);
+
+                if (!$condition->getShouldRender()) {
+                    return false;
+                }
+
+                if ($condition->getShouldValueUpdate()) {
+                    $value = $condition->getNewValue();
+                }
+            }
+        }
+
+        return true;
     }
 
     #endregion
