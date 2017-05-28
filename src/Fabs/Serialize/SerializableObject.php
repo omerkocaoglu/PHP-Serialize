@@ -266,7 +266,7 @@ class SerializableObject implements \JsonSerializable
     {
         if ($validation instanceof ValidationBase) {
 
-            if (!is_array($this->serializable_object_validations[$property_name])) {
+            if (!array_key_exists($property_name, $this->serializable_object_validations)) {
                 $this->serializable_object_validations[$property_name] = [];
             }
 
