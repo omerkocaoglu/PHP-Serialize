@@ -254,7 +254,7 @@ class SerializableObject implements \JsonSerializable
     {
         if ($condition instanceof ConditionBase) {
 
-            if (!is_array($this->serializable_object_conditions[$property_name])) {
+            if (!array_key_exists($property_name, $this->serializable_object_conditions)) {
                 $this->serializable_object_conditions[$property_name] = [];
             }
 
