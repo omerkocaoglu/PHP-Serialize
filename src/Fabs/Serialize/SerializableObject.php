@@ -81,7 +81,6 @@ class SerializableObject implements \JsonSerializable
 
     public function deserializeFromArray($data)
     {
-
         foreach ($data as $key => $value) {
             if (in_array($key, $this->serializable_object_transient_properties)) {
                 continue;
@@ -95,7 +94,7 @@ class SerializableObject implements \JsonSerializable
                     } else {
                         $this->$key = [];
                         foreach ($value as $object_key => $object_value) {
-                            $this->$key[] = self::create($object_value, $registered_type->getClassName());
+                            $this->$key[$object_key] = self::create($object_value, $registered_type->getClassName());
                         }
                     }
                 } else {
@@ -105,7 +104,6 @@ class SerializableObject implements \JsonSerializable
         }
 
         $this->validate();
-
     }
 
     #region Static Functions
@@ -136,8 +134,8 @@ class SerializableObject implements \JsonSerializable
     {
         if ($is_array) {
             $output = [];
-            foreach ($data as $sub_data) {
-                $output[] = static::deserialize($sub_data);
+            foreach ($data as $key => $sub_data) {
+                $output[$key] = static::deserialize($sub_data);
             }
             return $output;
         } else {
