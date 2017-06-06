@@ -52,15 +52,14 @@ class SerializableObject implements \JsonSerializable
                 continue;
             }
 
+            $should_render = $this->applyConditions($property_name, $value);
+            if (!$should_render) {
+                continue;
+            }
+
             if ($value instanceof SerializableObject) {
                 $output[$property_name] = $value->jsonSerialize();
             } else {
-
-                $should_render = $this->applyConditions($property_name, $value);
-                if (!$should_render) {
-                    continue;
-                }
-
                 if (is_array($value)) {
                     $output[$property_name] = [];
                     foreach ($value as $key2 => $value2) {
