@@ -13,7 +13,7 @@ class IntegerValidation extends ValidationBase
 {
     public function isValid($value)
     {
-        if ($value == null) {
+        if ($value === null) {
             if ($this->is_required) {
                 return false;
             } else {
