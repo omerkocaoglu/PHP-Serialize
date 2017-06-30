@@ -14,6 +14,12 @@ class ValidationException extends \Exception
     protected $property_name;
     protected $validator_name;
 
+    /**
+     * ValidationException constructor.
+     * @param string $class_name
+     * @param string $property_name
+     * @param string $validator_name
+     */
     public function __construct($class_name, $property_name, $validator_name)
     {
         $this->class_name = $class_name;
