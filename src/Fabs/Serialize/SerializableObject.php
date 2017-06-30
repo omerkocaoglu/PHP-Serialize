@@ -247,6 +247,11 @@ class SerializableObject implements \JsonSerializable
         return $validation;
     }
 
+    /**
+     * @param string $property_name
+     * @param ConditionBase $condition
+     * @return null|ConditionBase
+     */
     protected function addCondition($property_name, $condition)
     {
         if ($condition instanceof ConditionBase) {
@@ -256,9 +261,16 @@ class SerializableObject implements \JsonSerializable
             }
 
             $this->serializable_object_conditions[$property_name][] = $condition;
+            return $condition;
         }
+        return null;
     }
 
+    /**
+     * @param string $property_name
+     * @param ValidationBase $validation
+     * @return null|ValidationBase
+     */
     protected function addValidation($property_name, $validation)
     {
         if ($validation instanceof ValidationBase) {
@@ -268,7 +280,9 @@ class SerializableObject implements \JsonSerializable
             }
 
             $this->serializable_object_validations[$property_name][] = $validation;
+            return $validation;
         }
+        return null;
     }
 
     protected function validate()
