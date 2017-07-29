@@ -37,4 +37,14 @@ abstract class ConditionBase
         $this->new_value = $value;
         $this->should_value_update = true;
     }
+
+    public function applyWhenDeserialize()
+    {
+        return false;
+    }
+
+    public function applyWhenSerialize()
+    {
+        return true;
+    }
 }

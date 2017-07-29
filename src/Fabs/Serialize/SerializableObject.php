@@ -80,24 +80,32 @@ class SerializableObject implements \JsonSerializable
 
     public function deserializeFromArray($data)
     {
-        foreach ($data as $key => $value) {
-            if (in_array($key, $this->serializable_object_transient_properties)) {
+        foreach ($data as $property_name => $value) {
+            if (in_array($property_name, $this->serializable_object_transient_properties)) {
                 continue;
             }
+            if (property_exists($this, $property_name)) {
 
-            if (property_exists($this, $key)) {
-                if (array_key_exists($key, $this->serializable_object_registered_properties)) {
-                    $registered_type = $this->serializable_object_registered_properties[$key];
+                $should_render = $this->applyConditions($property_name, $value, false);
+                if ($should_render === false) {
+                    continue;
+                }
+
+                if (array_key_exists($property_name, $this->serializable_object_registered_properties)) {
+                    $registered_type = $this->serializable_object_registered_properties[$property_name];
                     if ($registered_type->getIsArray() === false) {
-                        $this->$key = self::create($value, $registered_type->getClassName());
+                        $this->$property_name = self::create($value, $registered_type->getClassName());
                     } else {
-                        $this->$key = [];
+                        $this->$property_name = [];
                         foreach ($value as $object_key => $object_value) {
-                            $this->$key[$object_key] = self::create($object_value, $registered_type->getClassName());
+                            $this->$property_name[$object_key] = self::create(
+                                $object_value,
+                                $registered_type->getClassName()
+                            );
                         }
                     }
                 } else {
-                    $this->$key = $value;
+                    $this->$property_name = $value;
                 }
             }
         }
@@ -170,6 +178,7 @@ class SerializableObject implements \JsonSerializable
     }
 
     #region Validations
+
     /**
      * @param $property_name
      * @return IntegerValidation
@@ -316,10 +325,20 @@ class SerializableObject implements \JsonSerializable
         }
     }
 
-    protected function applyConditions($property_name, &$value)
+    protected function applyConditions($property_name, &$value, $is_serializing = true)
     {
         if (array_key_exists($property_name, $this->serializable_object_conditions)) {
             foreach ($this->serializable_object_conditions[$property_name] as $condition) {
+                if ($is_serializing) {
+                    if ($condition->applyWhenSerialize() === false) {
+                        continue;
+                    }
+                } else {
+                    if ($condition->applyWhenDeserialize() === false) {
+                        continue;
+                    }
+                }
+
                 $condition->apply($value);
 
                 if (!$condition->getShouldRender()) {
