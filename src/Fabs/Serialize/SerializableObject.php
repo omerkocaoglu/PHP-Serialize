@@ -300,6 +300,7 @@ class SerializableObject implements \JsonSerializable
             if (array_key_exists($key, $this->serializable_object_validations)) {
 
                 foreach ($this->serializable_object_validations[$key] as $validation) {
+                    $given_value = $value;
                     $validation_failed = false;
 
                     if ($validation->getIsArray()) {
@@ -308,6 +309,7 @@ class SerializableObject implements \JsonSerializable
                         } else {
                             foreach ($value as $value2) {
                                 if (!$validation->isValid($value2)) {
+                                    $given_value = $value2;
                                     $validation_failed = true;
                                     break;
                                 }
@@ -318,7 +320,7 @@ class SerializableObject implements \JsonSerializable
                     }
 
                     if ($validation_failed) {
-                        throw new ValidationException(get_class($this), $key, $validation->getValidationName());
+                        throw new ValidationException(get_class($this), $key, $validation->getValidationName(), $given_value);
                     }
                 }
             }
