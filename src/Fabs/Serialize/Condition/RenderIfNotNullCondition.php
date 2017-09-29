@@ -13,7 +13,7 @@ class RenderIfNotNullCondition extends ConditionBase
 {
     public function apply($value)
     {
-        if ($value == null) {
+        if ($value === null) {
             $this->should_render = false;
         } else {
             $this->should_render = true;
