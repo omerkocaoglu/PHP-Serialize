@@ -121,7 +121,7 @@ class SerializableObject implements \JsonSerializable
             return null;
         }
         if (!is_array($data)) {
-            throw new \InvalidArgumentException('data must be an array');
+            throw new \InvalidArgumentException('data must be an array, given ' . gettype($data));
         }
 
         if (!class_exists($class_name)) {
