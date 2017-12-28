@@ -117,7 +117,7 @@ class SerializableObject implements \JsonSerializable
 
     public static function create($data, $class_name)
     {
-        if ($data == null) {
+        if ($data === null) {
             return null;
         }
         if (!is_array($data)) {
