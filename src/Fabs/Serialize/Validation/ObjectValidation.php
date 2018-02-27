@@ -13,6 +13,8 @@ class ObjectValidation extends ValidationBase
 {
     /** @var string */
     protected $type = null;
+    /** @var string */
+    protected $given = null;
 
     /**
      * @param $type string
@@ -27,6 +29,16 @@ class ObjectValidation extends ValidationBase
     public function isValid($value)
     {
         if ($value === null) {
+            $this->given = null;
+        } else {
+            if (is_object($value)) {
+                $this->given = get_class($value);
+            } else {
+                $this->given = gettype($value);
+            }
+        }
+
+        if ($value === null) {
             if ($this->is_required) {
                 return false;
             } else {
@@ -39,6 +51,7 @@ class ObjectValidation extends ValidationBase
 
     public function getValidationName()
     {
-        return $this->type;
+        return 'expected: ' . $this->type . ' given: ' . $this->given;
     }
 }
+
